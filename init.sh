@@ -544,6 +544,8 @@ function init_hal_sensors()
 			set_property ro.ignore_atkbd 1
 			has_sensors=true
 			hal_sensors=iio
+			set_property ro.iio.accel.quirks no-trig
+			set_property ro.iio.anglvel.quirks no-trig
 			;&
 		*)
 			has_sensors=false
