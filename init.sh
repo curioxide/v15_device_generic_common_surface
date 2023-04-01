@@ -427,6 +427,10 @@ function init_hal_thermal()
 
 function init_hal_sensors()
 {
+	set_property debug.sensors.use_legacy true
+	start sensors-hal-1-0
+    start vendor.sensors-hal-1-0
+
 	# if we have sensor module for our hardware, use it
 	ro_hardware=$(getprop ro.hardware)
 	[ -f /vendor/lib/hw/sensors.${ro_hardware}.so ] && return 0
