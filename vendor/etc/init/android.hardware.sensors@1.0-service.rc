@@ -6,6 +6,27 @@ service vendor.sensors-hal-1-0 /vendor/bin/hw/android.hardware.sensors@1.0-servi
     capabilities BLOCK_SUSPEND
     rlimit rtprio 10 10
 
+on property:sys.boot_completed=1
+	setprop iio.device0.removed 1
+	setprop iio.device1.removed 1
+	setprop iio.device2.removed 1
+	setprop iio.device3.removed 1
+	setprop iio.device4.removed 1
+	setprop iio.device5.removed 1
+	setprop iio.device6.removed 1
+	setprop iio.device0.removed 0
+	setprop iio.device1.removed 0
+	setprop iio.device2.removed 0
+	setprop iio.device3.removed 0
+	setprop iio.device4.removed 0
+	setprop iio.device5.removed 0
+	setprop iio.device6.removed 0
+	chown system system /dev/iio:device*
+    chown system system /sys/bus/iio/devices/iio:device*/*
+    chown system system /sys/bus/iio/devices/iio:device*/buffer/*
+    chown system system /sys/bus/iio/devices/iio:device*/scan_elements/*
+    chown system system /sys/bus/iio/devices/iio:device*/trigger/*
+
 on property:debug.sensors.use_legacy=true
 start vendor.sensors-hal-1-0
 
