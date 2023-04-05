@@ -7,6 +7,7 @@ service vendor.sensors-hal-1-0 /vendor/bin/hw/android.hardware.sensors@1.0-servi
     rlimit rtprio 10 10
 
 on property:sys.boot_completed=1
+    start vendor.sensors-hal-1-0
 	setprop iio.device0.removed 1
 	setprop iio.device1.removed 1
 	setprop iio.device2.removed 1
