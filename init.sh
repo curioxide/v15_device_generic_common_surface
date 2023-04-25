@@ -649,17 +649,186 @@ function init_cpu_governor()
 
 function set_lowmem()
 {
-	# 512 MB size in kB : https://source.android.com/devices/tech/perf/low-ram
-	SIZE_512MB=2048000
+	# 3GB size in kB : https://source.android.com/devices/tech/perf/low-ram
+	SIZE_3GB=3145728
 
 	mem_size=`cat /proc/meminfo | grep MemTotal | tr -s ' ' | cut -d ' ' -f 2`
 
-	if [ "$mem_size" -le "$SIZE_512MB" ]
+	if [ "$mem_size" -le "$SIZE_3GB" ]
 	then
 		setprop ro.config.low_ram true
 	else
-		setprop ro.config.low_ram false
+		# Choose between low-memory vs high-performance device. 
+		# Default = false.
+		setprop ro.config.low_ram ${FORCE_LOW_MEM:-false}
 	fi
+
+	# Use free memory and file cache thresholds for making decisions 
+	# when to kill. This mode works the same way kernel lowmemorykiller 
+	# driver used to work. AOSP Default = false, Our default = true
+	setprop ro.lmk.use_minfree_levels ${FORCE_MINFREE_LEVELS:-true}
+	
+	for c in `cat /proc/cmdline`; do
+		case $c in
+			*=*)
+				eval $c
+				if [ -z "$1" ]; then
+					case $c in
+						FORCE_KILL_HEAVIEST_TASK=*)
+							# Kill heaviest eligible task (best decision) vs. any eligible task 
+							# -fast decision-. Default = false
+							setprop ro.lmk.kill_heaviest_task "$FORCE_KILL_HEAVIEST_TASK"
+							;;
+						FORCE_SWAP_FREE_LOW_PERCENTAGE=*)
+							# Level of free swap as a percentage of the total swap space used as 
+							# a threshold to consider the system as swap space starved. Default 
+							# for low-RAM devices = 10, for high-end devices = 20
+							setprop ro.lmk.swap_free_low_percentage "$FORCE_SWAP_FREE_LOW_PERCENTAGE"
+							;;
+						FORCE_THRASHING_LIMIT=*)
+							# Number of workingset refaults as a percentage of the file-backed 
+							# pagecache size used as a threshold to consider system thrashing its 
+							# pagecache. 
+							# Default for low-RAM devices = 30, for high-end devices = 100
+							setprop ro.lmk.thrashing_limit "$FORCE_THRASHING_LIMIT"
+							;;
+						FORCE_LMK_CRITICAL=*)
+							# The possible values of oom_adj range from -17 to +15 (Default=0). 
+							# The higher the score, more likely the associated process is to 
+							# be killed by OOM-killer. If oom_adj is set to -17, the process 
+							# is not considered for OOM-killing.
+							setprop ro.lmk.critical "$FORCE_LMK_CRITICAL"
+							;;
+						FORCE_PSI_PARTIAL_STALL_THRESHOLD=*)
+							# The partial PSI stall threshold, in milliseconds, for triggering 
+							# low memory notification. If the device receives memory pressure 
+							# notifications too late, decrease this value to trigger earlier 
+							# notifications. If memory pressure notifications trigger unnecessarily, 
+							# increase this value to make the device less sensitive to noise. 	
+							# High end: 70 	Low end: 200
+							setprop ro.lmk.psi_partial_stall_ms "$FORCE_PSI_PARTIAL_STALL_THRESHOLD"
+							;;
+						FORCE_PSI_COMPLETE_STALL_THRESHOLD=*)
+							# The complete PSI stall threshold, in milliseconds, for triggering 
+							# critical memory notifications. If the device receives critical memory 
+							# pressure notifications too late, decrease this value to trigger earlier 
+							# notifications. If critical memory pressure notifications trigger 
+							# unnecessarily, increase this value to make the device less sensitive 
+							# to noise.
+							# Reccommended: 700
+							setprop ro.lmk.psi_complete_stall_ms "$FORCE_PSI_COMPLETE_STALL_THRESHOLD"
+							;;
+						FORCE_THRASHING_LIMIT_DECAY=*)
+							# The thrashing threshold decay expressed as a percentage of the original 
+							# threshold used to lower the threshold when the system doesn’t recover, 
+							# even after a kill. If continuous thrashing produces unnecessary kills, 
+							# decrease the value. If the response to continuous thrashing after a kill 
+							# is too slow, increase the value. 	
+							# High end: 10 	Low end: 50
+							setprop ro.lmk.thrashing_limit_decay "$FORCE_THRASHING_LIMIT_DECAY"
+							;;
+						FORCE_SWAP_UTIL_MAX=*)
+							# The max amount of swapped memory as a percentage of the total swappable 
+							# memory. When swapped memory grows over this limit, it means that the 
+							# system swapped most of its swappable memory and is still under pressure. 
+							# This can happen when non-swappable allocations are generating memory 
+							# pressure which can not be relieved by swapping because most of the swappable 
+							# memory is already swapped out. The default value is 100, which effectively 
+							# disables this check. If the performance of the device is affected during 
+							# memory pressure while swap utilization is high and the free swap level 
+							# is not dropping to ro.lmk.swap_free_low_percentage, decrease the value to 
+							# limit swap utilization. 	
+							# High end: 100  Low end: 100
+							setprop ro.lmk.swap_util_max "$FORCE_SWAP_UTIL_MAX"
+							;;
+
+						# Memory
+
+						FORCE_LMK_ENABLE=*)
+							# ro.lmk.enable "true"
+							setprop ro.lmk.enable "$FORCE_LMK_ENABLE"
+							;;
+						FORCE_MIN_FREE_MEMORY=*)
+							# ro.lmk.min_free_memory "512M"
+							setprop ro.lmk.min_free_memory "$FORCE_MIN_FREE_MEMORY"
+							;;
+						FORCE_MAX_FREE_MEMORY=*)
+							# ro.lmk.max_free_memory "1024M"
+							setprop ro.lmk.max_free_memory "$FORCE_MAX_FREE_MEMORY"
+							;;
+						FORCE_OOM_SCORE_ADJ=*)
+							# ro.lmk.oom_score_adj "100"
+							setprop ro.lmk.oom_score_adj "$FORCE_OOM_SCORE_ADJ"
+							;;
+						FORCE_ENFORCE_MIN_FREE_MB=*)
+							# ro.lmk.enforce_min_free_mb "1024"
+							setprop ro.lmk.enforce_min_free_mb "$FORCE_ENFORCE_MIN_FREE_MB"
+							;;
+						FORCE_SCHED_MIN_FREE_PAGES=*)
+							# ro.lmk.sched_min_free_pages "1024"
+							setprop ro.lmk.sched_min_free_pages "$FORCE_SCHED_MIN_FREE_PAGES"
+							;;
+						FORCE_SCHED_MIN_ACTIVE_PAGES=*)
+							# ro.lmk.sched_min_active_pages "512"
+							setprop ro.lmk.sched_min_active_pages "$FORCE_SCHED_MIN_ACTIVE_PAGES"
+							;;
+						FORCE_SCHED_MIN_INACTIVE_PAGES=*)
+							# ro.lmk.sched_min_inactive_pages "256"
+							setprop ro.lmk.sched_min_inactive_pages "$FORCE_SCHED_MIN_INACTIVE_PAGES"
+							;;
+						FORCE_SCHED_MIN_DIRTY_PAGES=*)
+							# ro.lmk.sched_min_dirty_pages "128"
+							setprop ro.lmk.sched_min_dirty_pages "$FORCE_SCHED_MIN_DIRTY_PAGES"
+							;;
+						FORCE_SCHED_MIN_WRITEBACK_PAGES=*)
+							# ro.lmk.sched_min_writeback_pages "64"
+							setprop ro.lmk.sched_min_writeback_pages "$FORCE_SCHED_MIN_WRITEBACK_PAGES"
+							;;
+						FORCE_SCHED_MIN_RECLAIMABLE_PAGES=*)
+							# ro.lmk.sched_min_reclaimable_pages "32"
+							setprop ro.lmk.sched_min_reclaimable_pages "$FORCE_SCHED_MIN_RECLAIMABLE_PAGES"
+							;;
+						FORCE_SCHED_MIN_UNRECLAIMABLE_PAGES=*)
+							# ro.lmk.sched_min_unreclaimable_pages "16"
+							setprop ro.lmk.sched_min_unreclaimable_pages "$FORCE_SCHED_MIN_UNRECLAIMABLE_PAGES"
+							;;
+
+						# Performance
+
+						FORCE_POWER_PROFILE=*)
+							# ro.lmk.power_profile "performance"
+							setprop ro.lmk.power_profile "$FORCE_MEMORY_TRIM_ENABLE"
+							;;
+						FORCE_IO_PROFILE=*)
+							# ro.lmk.io_profile "performance"
+							setprop ro.lmk.io_profile "$FORCE_MEMORY_TRIM_ENABLE"
+							;;
+						FORCE_CPU_GOV=*)
+							# Must be set before init_cpu_governor() 
+							# Options: ondemand, hotplug, interactive, performance
+							setprop cpu.governor "$FORCE_CPU_GOV"
+							;;
+						FORCE_CPU_SCALING_GOV=*)
+							# ro.lmk.cpu_scaling_governor "performance"
+							setprop ro.lmk.cpu_scaling_governor "$FORCE_MEMORY_TRIM_ENABLE"
+							;;
+						FORCE_GPU_SCALING_GOV=*)
+							# ro.lmk.gpu_scaling_governor "performance"
+							setprop ro.lmk.gpu_scaling_governor "$FORCE_MEMORY_TRIM_ENABLE"
+							;;
+						FORCE_MEMORY_TRIM_ENABLE=*)
+							# ro.lmk.memory_trim_enable "true"
+							setprop ro.lmk.memory_trim_enable "$FORCE_MEMORY_TRIM_ENABLE"
+							;;
+						FORCE_THERMAL_THROTTLE_ENABLE=*)
+							# ro.lmk.thermal_throttle_enable "true"
+							setprop ro.lmk.thermal_throttle_enable "$FORCE_THERMAL_THROTTLE_ENABLE"
+							;;
+					esac
+				fi
+				;;
+		esac
+	done
 }
 
 function do_init()

@@ -31,9 +31,11 @@ PRODUCT_PROPERTY_OVERRIDES := \
 # LMKd
 PRODUCT_PRODUCT_PROPERTIES += \
     ro.lmk.critical_upgrade=true \
-    ro.lmk.use_minfree_levels=true \
     ro.lmk.use_psi=true \
     ro.lmk.use_new_strategy=false
+    
+    # We want to be able to set this via kernel cli
+    # ro.lmk.use_minfree_levels=true
 
 PRODUCT_COPY_FILES := \
     $(if $(wildcard $(PRODUCT_DIR)init.rc),$(PRODUCT_DIR)init.rc:root/init.rc) \
