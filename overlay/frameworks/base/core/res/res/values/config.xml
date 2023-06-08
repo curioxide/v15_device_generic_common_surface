@@ -114,7 +114,7 @@
          PackageManager.FEATURE_FREEFORM_WINDOW_MANAGEMENT feature to your device specification.
          The duplication is necessary, because this information is used before the features are
          available to the system.-->
-    <bool name="config_freeformWindowManagement">true</bool>
+    <bool name="config_freeformWindowManagement">false</bool>
 
     <!-- Controls the opacity of the navigation bar depending on the visibility of the
          various workspace stacks.
