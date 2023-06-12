@@ -147,3 +147,8 @@ PRODUCT_PACKAGES += \
 	pc.xml \
 	hpe.xml \
 	device.prop
+
+PRODUCT_PACKAGES += \
+    QuickSearchBox \
+    GoogleQuickSearchBox
+    
