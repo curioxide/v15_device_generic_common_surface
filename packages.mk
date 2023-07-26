@@ -159,3 +159,8 @@ PRODUCT_PACKAGES += \
     BlissSetupWizard
     
 endif
+
+# SeedVault
+PRODUCT_PACKAGES += \
+    Seedvault
+
