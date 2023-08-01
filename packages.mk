@@ -152,3 +152,10 @@ PRODUCT_PACKAGES += \
     QuickSearchBox \
     GoogleQuickSearchBox
     
+
+ifeq ($(USE_BLISS_SETUPWIZARD), true)
+
+PRODUCT_PACKAGES += \
+    BlissSetupWizard
+    
+endif
