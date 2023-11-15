@@ -531,6 +531,15 @@ function init_hal_sensors()
     set_property config.override_forced_orient ${HAS_SENSORS:-$has_sensors}
 }
 
+function init_hal_surface()
+{
+	case "$UEVENT" in
+		*Surface*Pro*[4-9]*|*Surface*Book*|*Surface*Laptop*[1~4]*|*Surface*Laptop*Studio*)
+			start iptsd_runner
+			;;
+	esac
+}
+
 function create_pointercal()
 {
 	if [ ! -e /data/misc/tscal/pointercal ]; then
@@ -624,9 +633,15 @@ function do_init()
 	init_hal_power
 	init_hal_thermal
 	init_hal_sensors
+	init_hal_surface
 	init_tscal
 	init_ril
 	post_init
+	if [ ! $(lsmod | grep gpio_keys) ]; then
+		modprobe -r soc_button_array
+		modprobe gpio_keys
+		modprobe acpi:MSHW0040:
+	fi
 }
 
 function do_netconsole()
